@@ -32,7 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setUser(session?.user ?? null);
       if (_event === 'SIGNED_IN' && session) {
-        navigate('/workspace');
+        navigate('/');
       }
       if (_event === 'SIGNED_OUT') {
         navigate('/login');
