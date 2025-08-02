@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 interface AuthContextType {
   session: Session | null;
   user: User | null;
+  loading: boolean; // We've added a loading state
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -14,18 +15,23 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true); // Start as true
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const fetchSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);
-    });
+      setLoading(false); // Authentication state is now resolved
+    };
+
+    fetchSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (_event === 'SIGNED_IN') {
+      if (_event === 'SIGNED_IN' && session) {
         navigate('/workspace');
       }
       if (_event === 'SIGNED_OUT') {
@@ -39,12 +45,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [navigate]);
 
   return (
-    <AuthContext.Provider value={{ session, user }}>
+    <AuthContext.Provider value={{ session, user, loading }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
 export const useAuth = () => {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
