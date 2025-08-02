@@ -6,8 +6,8 @@ import Login from './pages/Login';
 import Workspace from './pages/Workspace';
 import Dashboard from './pages/Dashboard';
 import IndexPage from './pages/index';
+import Datasets from './pages/Datasets';
 
-// A component to protect private routes
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const { session, loading } = useAuth();
 
@@ -39,7 +39,10 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
+      <Route 
+        path="/login" 
+        element={session ? <Navigate to="/workspace" /> : <Login />} 
+      />
       <Route 
         path="/" 
         element={session ? <Navigate to="/workspace" /> : <IndexPage />} 
@@ -57,6 +60,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route // <-- New route
+        path="/datasets" 
+        element={
+          <ProtectedRoute>
+            <Datasets />
           </ProtectedRoute>
         } 
       />

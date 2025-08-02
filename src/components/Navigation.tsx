@@ -1,76 +1,69 @@
-import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { 
-  BarChart3, 
-  Database, 
-  Users, 
-  Settings, 
-  Plus,
-  Search,
-  Bell,
-  User
-} from "lucide-react";
+// src/components/Navigation.tsx
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { supabase } from '../services/supabaseClient';
+import { useAuth } from './auth/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const Navigation = () => {
+  const { session, user } = useAuth();
+  const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
+  };
+
+  const getDisplayName = () => {
+    return user?.user_metadata?.full_name || user?.email?.split('@')[0];
+  };
+
   return (
-    <motion.nav 
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      className="fixed top-0 left-0 right-0 z-50 bg-gradient-card backdrop-blur-xl border-b border-border/50"
-    >
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <motion.div 
-            className="flex items-center space-x-3"
-            whileHover={{ scale: 1.05 }}
-          >
-            <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-              <BarChart3 className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold data-accent">CanvasFlow</span>
-          </motion.div>
-
-          {/* Main Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
-            <Button variant="ghost" size="sm">
-              <BarChart3 className="w-4 h-4 mr-2" />
-              Dashboards
-            </Button>
-            <Button variant="ghost" size="sm">
-              <Database className="w-4 h-4 mr-2" />
-              Data Sources
-            </Button>
-            <Button variant="ghost" size="sm">
-              <Users className="w-4 h-4 mr-2" />
-              Collaborate
-            </Button>
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center space-x-3">
-            <Button variant="ghost" size="icon" className="relative">
-              <Search className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="w-4 h-4" />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full"></div>
-            </Button>
-            <Button 
-              variant="primary" 
-              size="sm"
-              onClick={() => window.location.hash = '#dashboard'}
+    <header className="py-6 px-8 flex items-center justify-between text-white bg-transparent absolute top-0 w-full z-50">
+      <Link to="/" className="text-2xl font-bold text-white">
+        Canvasflow
+      </Link>
+      <div className="flex items-center space-x-6">
+        <Link to="/workspace" className="hover:text-teal-400 transition-colors">
+          Workspace
+        </Link>
+        {session ? (
+          <div className="relative">
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="flex items-center space-x-2 p-2 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              New Dashboard
-            </Button>
-            <Button variant="ghost" size="icon">
-              <User className="w-4 h-4" />
-            </Button>
+              <img
+                src={user?.user_metadata?.avatar_url || 'https://via.placeholder.com/32'}
+                alt="Profile"
+                className="w-8 h-8 rounded-full"
+              />
+            </button>
+            {isMenuOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-20">
+                <div className="px-4 py-2 text-sm text-gray-300 border-b border-gray-700">
+                  <p className="font-semibold">{getDisplayName()}</p>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-red-500 hover:text-white transition-colors"
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
           </div>
-        </div>
+        ) : (
+          <Link
+            to="/login"
+            className="px-6 py-2 rounded-full bg-gradient-to-r from-teal-500 to-green-600 font-semibold shadow-lg hover:from-teal-600 hover:to-green-700 transition-all"
+          >
+            Login
+          </Link>
+        )}
       </div>
-    </motion.nav>
+    </header>
   );
 };
 

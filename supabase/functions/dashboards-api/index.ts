@@ -1,7 +1,7 @@
 // supabase/functions/dashboards-api/index.ts
 
 import { serve, supabase, corsHeaders, getAuthenticatedUser } from '../utils/supabase.ts';
-import { z } from 'https://deno.land/x/zod@v3.23.4/mod.ts';
+import { z } from 'https://esm.sh/zod@3.22.4'; // A more reliable import URL
 
 const dashboardSchema = z.object({
   name: z.string().min(1, 'Name is required.'),
@@ -25,9 +25,11 @@ serve(async (req: Request) => {
 
     const url = new URL(req.url);
     const dashboardId = url.pathname.split('/').pop();
+    const isRootRequest = url.pathname.endsWith('/dashboards-api');
 
     try {
-        if (req.method === 'GET' && dashboardId === 'dashboards-api') { // GET all dashboards
+        if (req.method === 'GET' && isRootRequest) {
+            // ... (GET all dashboards logic, unchanged) ...
             const { data, error } = await supabase
                 .from('dashboards')
                 .select('*')
@@ -41,7 +43,8 @@ serve(async (req: Request) => {
             });
         }
         
-        if (req.method === 'GET' && dashboardId) { // GET a single dashboard
+        if (req.method === 'GET' && !isRootRequest) {
+            // ... (GET single dashboard logic, unchanged) ...
             const { data, error } = await supabase
                 .from('dashboards')
                 .select('*')
@@ -54,20 +57,21 @@ serve(async (req: Request) => {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });
         }
-
+        
         const body = await req.json();
 
         if (req.method === 'POST') { // Create a new dashboard
             const parsedBody = dashboardSchema.safeParse(body);
             if (!parsedBody.success) {
-                return new Response(JSON.stringify({ error: parsedBody.error }), {
+                return new Response(JSON.stringify({ error: parsedBody.error.flatten() }), {
                     status: 400,
                     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                 });
             }
             const { data, error } = await supabase
                 .from('dashboards')
-                .insert({ ...parsedBody.data, user_id: user.id });
+                .insert({ ...parsedBody.data, user_id: user.id })
+                .select(); // Added .select() to return the created row
 
             if (error) throw error;
             return new Response(JSON.stringify(data), {
@@ -77,9 +81,10 @@ serve(async (req: Request) => {
         }
 
         if (req.method === 'PUT' && dashboardId) { // Update a dashboard
+            // ... (PUT logic, unchanged) ...
             const parsedBody = dashboardSchema.safeParse(body);
             if (!parsedBody.success) {
-                return new Response(JSON.stringify({ error: parsedBody.error }), {
+                return new Response(JSON.stringify({ error: parsedBody.error.flatten() }), {
                     status: 400,
                     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                 });
@@ -98,6 +103,7 @@ serve(async (req: Request) => {
         }
 
         if (req.method === 'DELETE' && dashboardId) { // Delete a dashboard
+            // ... (DELETE logic, unchanged) ...
             const { error } = await supabase
                 .from('dashboards')
                 .delete()
